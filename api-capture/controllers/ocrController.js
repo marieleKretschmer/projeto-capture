@@ -21,7 +21,6 @@ exports.processImage = async (req, res) => {
         .split('\n')
         .map((linha) => ({ insert: linha + '\n' }))
     };
-    console.log(cleanedText);
     return res.json({ delta });
   } catch (err) {
     return res.status(500).json({ message: 'Erro ao processar imagem', error: err.message });
@@ -91,7 +90,6 @@ exports.updateOCR = async (req, res) => {
     if (!texto_extraido || !titulo) {
       return res.status(400).json({ message: 'Texto extraído e título são obrigatórios.' });
     }
-    console.log(texto_extraido);
 
     const result = await pool.query(
       `UPDATE registroocr 

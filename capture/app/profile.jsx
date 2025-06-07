@@ -27,6 +27,8 @@ export default function Profile() {
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [loading, setLoading] = useState(false);
+  const [senhaError, setSenhaError] = useState('');
+  const [senhaErrorConfere, setSenhaErrorConfere] = useState('');
 
   useEffect(() => {
     async function loadUser() {
@@ -46,6 +48,13 @@ export default function Profile() {
   }, []);
 
   const salvar = async () => {
+    await validateSenha(novaSenha);
+    await confereSenhas(novaSenha);
+
+    if (!!senhaError || !!senhaErrorConfere) {
+      return;
+    }
+
     if (novaSenha && novaSenha !== confirmarSenha) {
       Alert.alert('Erro', 'A nova senha e a confirmação não coincidem.');
       return;
@@ -94,6 +103,24 @@ export default function Profile() {
     );
   };
 
+  const validateSenha = async (value) => {
+    if (value.length >= 6 &&
+      /[A-Z]/.test(value) &&
+      /[a-z]/.test(value) &&
+      /\d/.test(value)) {
+      setSenhaError('');
+    } else {
+      setSenhaError('A senha deve ter 6+ caracteres, letra maiúscula, minúscula e número.');
+    }
+  };
+
+  const confereSenhas = async (value) => {
+    if (value !== novaSenha){
+      setSenhaErrorConfere('As senhas não conferem.')
+    }else{
+      setSenhaErrorConfere('');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -126,10 +153,30 @@ export default function Profile() {
           <TextInput style={styles.input} secureTextEntry value={senhaAtual} onChangeText={setSenhaAtual} />
 
           <Text style={styles.label}>Nova senha</Text>
-          <TextInput style={styles.input} secureTextEntry value={novaSenha} onChangeText={setNovaSenha} />
+          <TextInput
+            placeholderTextColor="#aaa"
+            value={novaSenha}
+            onChangeText={(text) => {
+              setNovaSenha(text);
+              if (senhaError) validateSenha(text);
+            }}
+            onBlur={() => validateSenha(novaSenha)}
+            style={[styles.input, senhaError ? styles.inputError : null]}
+            secureTextEntry
+          />
+          {senhaError ? <Text style={styles.errorText}>{senhaError}</Text> : null}
 
           <Text style={styles.label}>Confirmar nova senha</Text>
-          <TextInput style={styles.input} secureTextEntry value={confirmarSenha} onChangeText={setConfirmarSenha} />
+          <TextInput style={styles.input}
+            secureTextEntry
+            value={confirmarSenha}
+            onChangeText={(text) => {
+              setConfirmarSenha(text);
+              if (senhaErrorConfere) confereSenhas(text);
+            }}
+            onBlur={() => confereSenhas(confirmarSenha)}
+          />
+          {senhaErrorConfere ? <Text style={styles.errorText}>{senhaErrorConfere}</Text> : null}
 
           <TouchableOpacity style={styles.button} onPress={salvar}>
             <Text style={styles.buttonText}>Salvar alterações</Text>
@@ -212,5 +259,14 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     color: '#5E213E',
+  },
+  inputError: {
+    borderColor: colors.error,
+  },
+  errorText: {
+    color: colors.error,
+    marginTop: -10,
+    marginBottom: 8,
+    fontSize: 13,
   },
 });
