@@ -6,7 +6,7 @@ import { Alert, FlatList, Image, Modal, Pressable, SafeAreaView, StyleSheet, Tex
 import { Drawer, Provider as PaperProvider, Portal } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../context/authContext';
-import { listOCR } from '../services/ocrService';
+import { deleteOCR, listOCR } from '../services/ocrService';
 import { colors, fonts, spacing } from '../styles/theme';
 
 export default function Home() {

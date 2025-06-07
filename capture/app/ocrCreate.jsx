@@ -16,7 +16,7 @@ import {
   View
 } from 'react-native';
 import QuillEditor, { QuillToolbar } from 'react-native-cn-quill';
-import { getOCRById, sendImageOCR } from '../services/ocrService';
+import { getOCRById, saveOCR, sendImageOCR, updateOCR } from '../services/ocrService';
 import { colors, spacing } from '../styles/theme';
 
 export default function OcrCreate() {
@@ -27,20 +27,7 @@ export default function OcrCreate() {
   const router = useRouter();
   const editorRef = useRef();
   const { id } = useLocalSearchParams();
-  const exemploDelta = {
-    ops: [
-      { insert: 'Este é um texto ' },
-      { insert: 'negrito', attributes: { bold: true } },
-      { insert: ', ' },
-      { insert: 'itálico', attributes: { italic: true } },
-      { insert: ' e com ' },
-      { insert: 'fundo amarelo', attributes: { background: 'yellow' } },
-      { insert: '.\n' },
-      { insert: 'Nova linha com ' },
-      { insert: 'título', attributes: { header: 2 } },
-      { insert: '\n' },
-    ],
-  };
+
   useEffect(() => {
     if (id) loadData();
   }, [id]);
@@ -48,10 +35,10 @@ export default function OcrCreate() {
   const loadData = async () => {
     try {
       const dados = await getOCRById(id);
+      const deltaObject = JSON.parse(dados.texto_extraido); 
       setTitulo(dados.titulo || '');
       setComentario(dados.comentario || '');
-      setDelta(dados.texto_extraido || '');
-      //editorRef.current?.setContentHTML(dados.texto_extraido || '');
+      setDelta(deltaObject);
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível carregar os dados para edição.');
     }
@@ -60,9 +47,8 @@ export default function OcrCreate() {
   useEffect(() => {
     if (!!delta) {
       const timeout = setTimeout(() => {
-        // editorRef.current?.setContentHTML(texto || '');
         editorRef.current?.setContents(delta);
-      }, 100);
+      }, 500);
 
       return () => clearTimeout(timeout);
     }
@@ -92,9 +78,7 @@ export default function OcrCreate() {
   const processOCR = async (asset) => {
     try {
       const response = await sendImageOCR(asset);
-      console.log(response.delta);
       setDelta(response.delta);
-      //editorRef.current?.setContentHTML(response.cleanedText || '');
       Alert.alert('Sucesso', 'Imagem processada com sucesso!');
     } catch (err) {
       Alert.alert('Erro', 'Falha ao enviar imagem.');
@@ -102,29 +86,25 @@ export default function OcrCreate() {
   };
 
   const salvar = async () => {
-    const delta = await editorRef.current?.getDelta();
+    const delta = await editorRef.current?.getContents();
+   
     const conteudo = JSON.stringify(delta);
-    //const conteudo = await editorRef.current?.getContentHtml();
-
     if (!titulo || !conteudo) {
       Alert.alert('Erro', 'Preencha todos os campos obrigatórios.');
       return;
     }
-
-    console.log(conteudo);
 
     const dados = {
       texto_extraido: conteudo,
       comentario,
       titulo,
     };
-
     try {
       if (id) {
-        //await updateOCR(id, dados);
+        await updateOCR(id, dados);
         Alert.alert('Atualizado', 'Registro atualizado com sucesso!');
       } else {
-        //await saveOCR(dados);
+        await saveOCR(dados);
         Alert.alert('Sucesso', 'Registro salvo com sucesso!');
       }
 
@@ -145,7 +125,7 @@ export default function OcrCreate() {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0} // ajuste conforme seu header
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
       >
         <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 25 }}>
           <Text style={styles.label}>Selecione sua imagem</Text>
@@ -170,7 +150,6 @@ export default function OcrCreate() {
             <QuillEditor
               ref={editorRef}
               style={styles.editor}
-              initialDelta={exemploDelta}
               webview={{
                 nestedScrollEnabled: true,
               }}
@@ -288,7 +267,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 8,
-    //margin: 16,
     marginBottom: 10,
     elevation: 5,
   },
@@ -300,7 +278,6 @@ const styles = StyleSheet.create({
   },
   editorContainer: {
     flex: 1,
-    //marginHorizontal: 10,
     marginBottom: 10,
     minHeight: 250,
     borderWidth: 1,
