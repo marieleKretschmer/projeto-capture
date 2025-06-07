@@ -3,6 +3,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Image,
   KeyboardAvoidingView,
@@ -26,6 +27,7 @@ export default function OcrCreate() {
   const [comentario, setComentario] = useState('');
   const router = useRouter();
   const editorRef = useRef();
+  const [loading, setLoading] = useState(false);
   const { id } = useLocalSearchParams();
 
   useEffect(() => {
@@ -35,7 +37,7 @@ export default function OcrCreate() {
   const loadData = async () => {
     try {
       const dados = await getOCRById(id);
-      const deltaObject = JSON.parse(dados.texto_extraido); 
+      const deltaObject = JSON.parse(dados.texto_extraido);
       setTitulo(dados.titulo || '');
       setComentario(dados.comentario || '');
       setDelta(deltaObject);
@@ -56,6 +58,7 @@ export default function OcrCreate() {
 
 
   const selecionarImagem = async () => {
+    setLoading(true);
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permissão necessária', 'Permita acesso à galeria para selecionar uma imagem.');
@@ -68,26 +71,26 @@ export default function OcrCreate() {
       base64: false,
     });
 
-    if (!result.canceled) {
-      const imageUri = result.assets[0].uri;
-      setImagem(imageUri);
-      processOCR(result.assets[0]);
-    }
-  };
 
-  const processOCR = async (asset) => {
     try {
-      const response = await sendImageOCR(asset);
-      setDelta(response.delta);
-      Alert.alert('Sucesso', 'Imagem processada com sucesso!');
+      if (!result.canceled) {
+        const asset = result.assets[0]
+        const response = await sendImageOCR(asset);
+        setImagem(asset.uri);
+        setDelta(response.delta);
+        Alert.alert('Sucesso', 'Imagem processada com sucesso!');
+      }
     } catch (err) {
       Alert.alert('Erro', 'Falha ao enviar imagem.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const salvar = async () => {
+    setLoading(true);
     const delta = await editorRef.current?.getContents();
-   
+
     const conteudo = JSON.stringify(delta);
     if (!titulo || !conteudo) {
       Alert.alert('Erro', 'Preencha todos os campos obrigatórios.');
@@ -111,6 +114,8 @@ export default function OcrCreate() {
       router.replace('/home');
     } catch (error) {
       Alert.alert('Erro', 'Falha ao salvar os dados.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -202,6 +207,12 @@ export default function OcrCreate() {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#5E213E" />
+          <Text style={styles.loadingText}>Processando...</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -290,5 +301,18 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 5,
     backgroundColor: '#ddd'
-  }
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#5E213E',
+  },
 });

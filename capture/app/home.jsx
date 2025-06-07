@@ -2,7 +2,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, FlatList, Image, Modal, Pressable, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image, Modal, Pressable, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Drawer, Provider as PaperProvider, Portal } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../context/authContext';
@@ -13,9 +13,10 @@ export default function Home() {
     const [registros, setRegistros] = useState([]);
     const [busca, setBusca] = useState('');
     const [showConsent, setShowConsent] = useState(false);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
     const { user, logout } = useAuth();
     const router = useRouter();
-    const [drawerOpen, setDrawerOpen] = useState(false);
 
     useEffect(() => {
         const verificarConsentimento = async () => {
@@ -30,11 +31,14 @@ export default function Home() {
     }, [user]);
 
     const fetchDados = async () => {
+        setLoading(true);
         try {
             const dados = await listOCR();
             setRegistros(dados);
         } catch (error) {
             console.error('Erro ao buscar registros:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -46,6 +50,12 @@ export default function Home() {
     return (
         <PaperProvider>
             <SafeAreaView style={styles.safeArea}>
+                {loading && (
+                    <View style={styles.loadingOverlay}>
+                        <ActivityIndicator size="large" color="#5E213E" />
+                        <Text style={styles.loadingText}>Processando...</Text>
+                    </View>
+                )}
                 <View style={styles.container}>
                     <View style={styles.topo}>
                         <Image source={require('../assets/images/logo.png')} style={styles.logo} resizeMode="contain" />
@@ -290,5 +300,18 @@ const styles = StyleSheet.create({
         height: '100%',
         backgroundColor: 'transparent', // ou 'rgba(0,0,0,0.1)' para escurecer levemente
         zIndex: 5,
-    }
+    },
+    loadingOverlay: {
+        position: 'absolute',
+        top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(255,255,255,0.8)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 10,
+    },
+    loadingText: {
+        marginTop: 10,
+        fontSize: 16,
+        color: '#5E213E',
+    },
 });

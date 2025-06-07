@@ -3,38 +3,42 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    Alert,
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { getUserFromToken } from '../services/authService';
 import { colors } from '../styles/theme';
 
 export default function Profile() {
   const router = useRouter();
-
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senhaAtual, setSenhaAtual] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     async function loadUser() {
+      setLoading(true);
       try {
         const user = await getUserFromToken(await AsyncStorage.getItem('accessToken'));
         setNome(user.nome);
         setEmail(user.email);
       } catch (err) {
         Alert.alert('Erro', 'Não foi possível carregar os dados do usuário.');
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -47,8 +51,16 @@ export default function Profile() {
       return;
     }
 
-    // Aqui você pode futuramente chamar uma função updateUser(novaSenha) com senhaAtual
-    Alert.alert('Sucesso', 'Perfil atualizado com sucesso!');
+    try {
+      setLoading(true);
+      
+      Alert.alert('Sucesso', 'Conta excluída!');
+      router.replace('/login');
+    } catch (err) {
+      Alert.alert('Erro', 'Erro ao excluir conta.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const excluirConta = () => {
@@ -62,12 +74,15 @@ export default function Profile() {
           style: 'destructive',
           onPress: async () => {
             try {
+              setLoading(true);
               //await logoutUser(); // limpa tokens e encerra sessão
-              
+
               Alert.alert('Conta Excluída!');
               router.replace('/login');
             } catch (err) {
               Alert.alert('Erro', 'Erro ao excluir conta.');
+            } finally {
+              setLoading(false);
             }
           },
         },
@@ -77,6 +92,12 @@ export default function Profile() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#5E213E" />
+          <Text style={styles.loadingText}>Processando...</Text>
+        </View>
+      )}
       <View style={styles.topBar}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <MaterialIcons name="arrow-back" size={24} color={colors.text} />
@@ -173,5 +194,18 @@ const styles = StyleSheet.create({
   deleteText: {
     color: '#b00020',
     fontSize: 16,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#5E213E',
   },
 });

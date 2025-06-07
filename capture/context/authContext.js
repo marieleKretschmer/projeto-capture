@@ -9,8 +9,8 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
- // const { from } = useLocalSearchParams();
-  const pathname = usePathname();
+  //const { from } = useLocalSearchParams();
+  //const pathname = usePathname();
 
   useEffect(() => {
     const loadUser = async () => {
@@ -31,11 +31,6 @@ export function AuthProvider({ children }) {
     }
     loadUser();
   }, []);
-
-  /*useEffect(() => {
-    console.log('Rota atual mudou para:', pathname);
-    // Aqui você pode fazer algo, como resetar estado ou atualizar layout
-  }, [pathname]);*/
 
   useEffect(() => {
     if (!loading){
