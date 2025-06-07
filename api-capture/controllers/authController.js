@@ -174,7 +174,6 @@ exports.deleteAccount = async (req, res) => {
   }
 };
 
-
 exports.updateProfile = async (req, res) => {
   const usuario_id = req.user?.id;
   const { nome, senhaAtual, novaSenha } = req.body;

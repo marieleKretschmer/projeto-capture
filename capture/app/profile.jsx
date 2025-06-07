@@ -16,7 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { getUserFromToken } from '../services/authService';
+import { deleteAccount, getUserFromToken, updateProfile } from '../services/authService';
 import { colors } from '../styles/theme';
 
 export default function Profile() {
@@ -45,7 +45,7 @@ export default function Profile() {
     loadUser();
   }, []);
 
-  const salvar = () => {
+  const salvar = async () => {
     if (novaSenha && novaSenha !== confirmarSenha) {
       Alert.alert('Erro', 'A nova senha e a confirmação não coincidem.');
       return;
@@ -53,11 +53,16 @@ export default function Profile() {
 
     try {
       setLoading(true);
-      
-      Alert.alert('Sucesso', 'Conta excluída!');
-      router.replace('/login');
+      await updateProfile({
+        nome,
+        senhaAtual,
+        novaSenha,
+      });
+
+      Alert.alert('Sucesso', 'Perfil atualizado com sucesso!');
+      router.replace('/home');
     } catch (err) {
-      Alert.alert('Erro', 'Erro ao excluir conta.');
+      Alert.alert('Erro', err.response?.data?.message || 'Erro ao atualizar perfil.');
     } finally {
       setLoading(false);
     }
@@ -75,9 +80,8 @@ export default function Profile() {
           onPress: async () => {
             try {
               setLoading(true);
-              //await logoutUser(); // limpa tokens e encerra sessão
-
-              Alert.alert('Conta Excluída!');
+              await deleteAccount();
+              Alert.alert('Conta excluída com sucesso!');
               router.replace('/login');
             } catch (err) {
               Alert.alert('Erro', 'Erro ao excluir conta.');
@@ -89,6 +93,7 @@ export default function Profile() {
       ]
     );
   };
+
 
   return (
     <SafeAreaView style={styles.container}>
