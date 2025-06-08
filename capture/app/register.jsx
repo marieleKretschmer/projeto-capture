@@ -57,7 +57,6 @@ export default function Register() {
     try {
       await register(nome, email, senha);
       router.push({ pathname: '/home', params: { from: 'register' } });
-      //router.replace('/home');
     } catch (err) {
       Alert.alert('Erro ao cadastrar', 'Tente novamente mais tarde.');
     }

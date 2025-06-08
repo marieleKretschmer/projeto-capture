@@ -44,7 +44,6 @@ async function handleAuthResponse(response) {
 
 export const deleteAccount = async () => {
     const response = await api.delete(`/auth/perfil`);
-    //await AsyncStorage.multiRemove(['accessToken', 'refreshToken']);
     await AsyncStorage.clear();
     return response.data;
 };

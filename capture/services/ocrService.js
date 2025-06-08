@@ -1,8 +1,12 @@
 import mime from 'mime';
 import api from './api';
 
-export async function listOCR() {
-  const response = await api.get('/ocr/listOcr');
+export async function listOCR({ page = 1, limit = 10, busca = '' }) {
+  console.log('aqui');
+  const response = await api.get('/ocr/listOcr', {
+    params: { page, limit, busca },
+  });
+  console.log(response);
   return response.data;
 }
 

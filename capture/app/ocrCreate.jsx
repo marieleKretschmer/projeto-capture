@@ -59,24 +59,55 @@ export default function OcrCreate() {
 
   const selecionarImagem = async () => {
     setLoading(true);
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permissão necessária', 'Permita acesso à galeria para selecionar uma imagem.');
+    // Solicita permissão para galeria e câmera
+    const { status: galeriaStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+
+    if (galeriaStatus !== 'granted' || cameraStatus !== 'granted') {
+      Alert.alert('Permissão necessária', 'Permita acesso à câmera e à galeria para continuar.');
+      setLoading(false);
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaType: ['Images'],
-      quality: 1,
-      base64: false,
-    });
+    // Exibe opções para o usuário
+    Alert.alert(
+      'Selecionar imagem',
+      'Escolha a origem da imagem:',
+      [
+        {
+          text: 'Câmera',
+          onPress: async () => {
+            const result = await ImagePicker.launchCameraAsync({
+              mediaType: ['Images'],
+              quality: 1,
+              base64: false,
+            });
+            await processImage(result);
+          },
+        },
+        {
+          text: 'Galeria',
+          onPress: async () => {
+            const result = await ImagePicker.launchImageLibraryAsync({
+              mediaType: ['Images'],
+              quality: 1,
+              base64: false,
+            });
+            await processImage(result);
+          },
+        },
+        { text: 'Cancelar', style: 'cancel', onPress: () => setLoading(false) },
+      ]
+    );
+  };
 
-
+  const processImage = async (result) => {
     try {
       if (!result.canceled) {
-        const asset = result.assets[0]
+        const asset = result.assets[0];
         const response = await sendImageOCR(asset);
         setImagem(asset.uri);
+        
         setDelta(response.delta);
         Alert.alert('Sucesso', 'Imagem processada com sucesso!');
       }
@@ -85,7 +116,7 @@ export default function OcrCreate() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const salvar = async () => {
     setLoading(true);

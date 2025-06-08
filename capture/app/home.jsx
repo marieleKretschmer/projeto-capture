@@ -17,29 +17,42 @@ export default function Home() {
     const [loading, setLoading] = useState(false);
     const { user, logout } = useAuth();
     const router = useRouter();
+    const [page, setPage] = useState(1);
+    const [limit] = useState(10);
+    const [total, setTotal] = useState(0);
 
     useEffect(() => {
-        const verificarConsentimento = async () => {
-            const consent = await AsyncStorage.getItem('termo');
-            if (!consent) setShowConsent(true);
-        };
-
         if (user) {
-            fetchDados();
+            setPage(1);
+            setRegistros([]);
+            fetchDados(1, true);
             verificarConsentimento();
         }
-    }, [user]);
+    }, [user, busca]);
 
-    const fetchDados = async () => {
+    const verificarConsentimento = async () => {
+        const consent = await AsyncStorage.getItem('termo');
+        if (!consent) setShowConsent(true);
+    };
+
+    const fetchDados = async (pagina = 1, replace = false) => {
+        if (loading) return;
         setLoading(true);
         try {
-            const dados = await listOCR();
-            setRegistros(dados);
+            const { registros: novos, total } = await listOCR({ page: pagina, limit, busca });
+            setRegistros(prev => replace ? novos : [...prev, ...novos]);
+            setTotal(total);
+            setPage(pagina);
         } catch (error) {
             console.error('Erro ao buscar registros:', error);
         } finally {
             setLoading(false);
         }
+    };
+
+    const carregarMais = () => {
+        if (registros.length >= total || loading) return;
+        fetchDados(page + 1);
     };
 
     const aceitarConsentimento = async () => {
@@ -80,8 +93,11 @@ export default function Home() {
                     </View>
 
                     <FlatList
-                        data={registros.filter(r => r.titulo.toLowerCase().includes(busca.toLowerCase()))}
+                        data={registros}
                         keyExtractor={(item) => item.id}
+                        onEndReached={carregarMais}
+                        onEndReachedThreshold={0.2}
+                        ListFooterComponent={loading && <ActivityIndicator size="small" color={colors.primary} />}
                         renderItem={({ item }) => (
                             <View style={styles.item}>
                                 <Text style={styles.titulo}>{item.titulo}</Text>
@@ -89,29 +105,24 @@ export default function Home() {
                                     <TouchableOpacity onPress={() => router.push({ pathname: '/ocrCreate', params: { from: 'home', id: item.id } })}>
                                         <Icon name="pencil-outline" size={22} color={colors.primary} />
                                     </TouchableOpacity>
-
                                     <TouchableOpacity
                                         onPress={() => {
-                                            Alert.alert(
-                                                'Confirmar Exclusão',
-                                                'Tem certeza que deseja excluir este registro?',
-                                                [
-                                                    { text: 'Cancelar', style: 'cancel' },
-                                                    {
-                                                        text: 'Excluir',
-                                                        style: 'destructive',
-                                                        onPress: async () => {
-                                                            try {
-                                                                await deleteOCR(item.id);
-                                                                Alert.alert('Sucesso', 'Registro excluído.');
-                                                                fetchDados();
-                                                            } catch (err) {
-                                                                Alert.alert('Erro', 'Falha ao excluir o registro.');
-                                                            }
+                                            Alert.alert('Confirmar Exclusão', 'Deseja excluir?', [
+                                                { text: 'Cancelar', style: 'cancel' },
+                                                {
+                                                    text: 'Excluir',
+                                                    style: 'destructive',
+                                                    onPress: async () => {
+                                                        try {
+                                                            await deleteOCR(item.id);
+                                                            Alert.alert('Sucesso', 'Registro excluído.');
+                                                            fetchDados(1, true);
+                                                        } catch {
+                                                            Alert.alert('Erro', 'Falha ao excluir o registro.');
                                                         }
                                                     }
-                                                ]
-                                            );
+                                                }
+                                            ]);
                                         }}
                                     >
                                         <MaterialIcons name="delete" size={24} color="black" />

@@ -32,23 +32,55 @@ exports.processImage = async (req, res) => {
 exports.listOcr = async (req, res) => {
   try {
     const usuario_id = req.user?.id;
+    const { page = 1, limit = 10, busca = '' } = req.query;
 
-    // Validação: verifica se o ID é inválido
     if (!usuario_id || usuario_id === 0) {
       return res.status(400).json({ message: 'ID do usuário inválido ou não fornecido.' });
     }
 
-    const result = await pool.query(
-      'SELECT * FROM registroocr WHERE usuario_id = $1',
-      [usuario_id]
-    );
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const params = [usuario_id];
+    let whereClause = `WHERE usuario_id = $1`;
 
-    res.status(200).json(result.rows);
+    if (busca.trim() !== '') {
+      params.push(`%${busca.toLowerCase()}%`);
+      whereClause += ` AND (LOWER(titulo) LIKE $2 OR LOWER(texto_extraido) LIKE $2)`;
+    }
+
+    const registrosQuery = `
+      SELECT * FROM registroocr
+      ${whereClause}
+      ORDER BY data_criacao DESC
+      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+    `;
+
+    params.push(limit);
+    params.push(offset);
+
+    const registros = await pool.query(registrosQuery, params);
+
+    const totalParams = [usuario_id];
+    let totalWhere = `WHERE usuario_id = $1`;
+
+    if (busca.trim() !== '') {
+      totalParams.push(`%${busca.toLowerCase()}%`);
+      totalWhere += ` AND (LOWER(titulo) LIKE $2 OR LOWER(texto_extraido) LIKE $2)`;
+    }
+
+    const totalQuery = `SELECT COUNT(*) FROM registroocr ${totalWhere}`;
+    const total = await pool.query(totalQuery, totalParams);
+
+    res.status(200).json({
+      registros: registros.rows,
+      total: parseInt(total.rows[0].count),
+      page: parseInt(page),
+      limit: parseInt(limit),
+    });
   } catch (err) {
-    console.error('Erro ao listar OCRs:', err);
     res.status(500).json({ message: 'Erro ao buscar registros OCR' });
   }
 };
+
 
 exports.saveOCR = async (req, res) => {
   try {

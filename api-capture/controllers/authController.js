@@ -31,7 +31,6 @@ exports.getUser = async (req, res) => {
     const user = result.rows[0];
     res.status(200).json(user);
   } catch (err) {
-    console.error('Erro ao buscar usuário:', err);
     res.status(500).json({ message: 'Erro ao buscar dados do usuário.' });
   }
 };
