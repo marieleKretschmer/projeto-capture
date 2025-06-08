@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -38,10 +39,15 @@ export default function Login() {
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0} // ajuste conforme seu header
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 5 }}>
         <View style={styles.overlay}>
+          <Image
+            source={require('../assets/images/logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <Text style={styles.titulo}>Login</Text>
           <TextInput
             placeholder="E-mail"
@@ -117,4 +123,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     textDecorationLine: 'underline',
   },
+  logo: {
+    width: 150,
+    height: 80,
+    marginBottom: 30,
+    alignSelf: 'center',
+  }
 });

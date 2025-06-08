@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -70,8 +71,12 @@ export default function Register() {
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 5 }}>
         <View style={styles.container}>
+          <Image
+            source={require('../assets/images/logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <Text style={styles.titulo}>Cadastro</Text>
-
           <TextInput
             placeholder="Nome"
             placeholderTextColor="#aaa"
@@ -174,4 +179,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     textDecorationLine: 'underline',
   },
+  logo: {
+    width: 150,
+    height: 80,
+    marginBottom: 30,
+    alignSelf: 'center',
+  }
 });
